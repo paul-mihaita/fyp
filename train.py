@@ -1,10 +1,13 @@
 import re
+import os
 import pandas as pd 
 import numpy as np 
 import matplotlib.pyplot as plt 
 import seaborn as sns
 import string
 import nltk
+import math
+from joblib import dump, load
 from nltk.stem.porter import *
 import warnings 
 from wordcloud import WordCloud
@@ -14,117 +17,93 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from helper_functions import *
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+s = 0
+while s<1 or s > 6:
+    s = "Which technique to use for training?" + '\n' + "1. Logistic Regression" + '\n' + "2. Random Forest" + '\n' + "3. SVC , polynomial" + '\n' + "4. SVC, gaussian" + '\n' + "5. SVC, sigmoid" + '\n' + "6. K-nearest " + '\n' + "Please enter a number from 1 to 6" + '\n'
+    try:
+        s = int(input(s))
+    except:
+        s = 0
 
+train  = clean_tweets(pd.read_csv('train_tweets.csv'))
+test = clean_tweets(pd.read_csv('test_tweets.csv'))
 
-
-train  = pd.read_csv('train_tweets.csv')
-test = pd.read_csv('test_tweets.csv')
-
-combi = train.append(test, ignore_index=True)
-def make_wordmap(label):
-    normal_words =' '.join([text for text in combi['tidy_tweet'][combi['label'] == label]])
-    wordcloud = WordCloud(width=800, height=500, random_state=21,max_font_size=110).generate(normal_words)
-    plt.figure(figsize=(10, 7))
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis('off')
-    plt.show()
-def remove_pattern(input_txt, pattern):
-    r = re.findall(pattern, input_txt)
-    for i in r:
-        input_txt = re.sub(i, '', input_txt)
-        
-    return input_txt    
-def hashtag_extract(x):
-    hashtags = []
-    # Loop over the words in the tweet
-    for i in x:
-        ht = re.findall(r"#(\w+)", i)
-        hashtags.append(ht)
-
-    return hashtags
-def plot_hashtags(l):
-    a = nltk.FreqDist(l)
-    d = pd.DataFrame({'Hashtag': list(a.keys()),'Count': list(a.values())})
-    # selecting top 10 most frequent hashtags     
-    d = d.nlargest(columns="Count", n = 10) 
-    plt.figure(figsize=(16,5))
-    ax = sns.barplot(data=d, x= "Hashtag", y = "Count")
-    ax.set(ylabel = 'Count')
-    plt.show()
-# remove twitter handles (@user)
-combi['tidy_tweet'] = np.vectorize(remove_pattern)(combi['tweet'], "@[\w]*")
-# remove special characters, numbers, punctuations
-combi['tidy_tweet'] = combi['tidy_tweet'].str.replace("[^a-zA-Z#]", " ")
-
-# removing short words
-combi['tidy_tweet'] = combi['tidy_tweet'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>2]))
-
-tokenized_tweet = combi['tidy_tweet'].apply(lambda x: x.split())
-
-stemmer = PorterStemmer()
-
-tokenized_tweet = tokenized_tweet.apply(lambda x: [stemmer.stem(i) for i in x]) # stemming
-
-for i in range(len(tokenized_tweet)):
-    tokenized_tweet[i] = ' '.join(tokenized_tweet[i])
-
-combi['tidy_tweet'] = tokenized_tweet
-
-'''frequency = {}
-maxf = 0
-for tweet in combi['tidy_tweet']:
-    words = re.findall(r'(\b[A-Za-z][a-z]{2,9}\b)', tweet)
-    for word in words:
-        count = frequency.get(word,0)
-        frequency[word] = count + 1
-        if count + 1 > maxf:
-            maxf = count+1
-'''
-#make_wordmap(0)
-#make_wordmap(1)
-
-# extracting hashtags from non racist/sexist tweets
-
-HT_regular = hashtag_extract(combi['tidy_tweet'][combi['label'] == 0])
-
-# extracting hashtags from racist/sexist tweets
-HT_negative = hashtag_extract(combi['tidy_tweet'][combi['label'] == 1])
-
-# unnesting list
-HT_regular = sum(HT_regular,[])
-HT_negative = sum(HT_negative,[])
-
-#plot_hashtags(HT_negative)
-#plot_hashtags(HT_regular)
-
+#analyse_tags(train)
 
 tfidf_vectorizer = TfidfVectorizer(max_df=0.90, min_df=2, max_features=1000, stop_words='english')
 # TF-IDF feature matrix
-tfidf = tfidf_vectorizer.fit_transform(combi['tidy_tweet'])
 
-train_tfidf = tfidf[:31962,:]
-test_tfidf = tfidf[31962:,:]
+train_tfidf = tfidf_vectorizer.fit_transform(train['tidy_tweet'])
+train_label = train['label']
 
 # splitting data into training and validation set
-xtrain_tfidf, xvalid_tfidf, ytrain, yvalid = train_test_split(train_tfidf, train['label'], random_state=42, test_size=0.3)
+xtrain_tfidf, xvalid_tfidf, ytrain, yvalid = train_test_split(train_tfidf, train_label, random_state=42, test_size=0.3)
 
-lreg = LogisticRegression()
-lreg.fit(xtrain_tfidf, ytrain)
+if s == 1:
+    text_classifier = LogisticRegression()
+    filename = 'logisticregression_model.joblib'
+elif s == 2:
+    text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
+    filename = 'randomforest_model.joblib'
+elif s == 3:
+    text_classifier = SVC(kernel='poly', degree=8)
+    filename = "svcpolynomial_model.joblib"
+elif s == 4:
+    text_classifier = SVC(kernel='rbf')
+    filename = "svcgaussian_model.joblib"
+elif s == 5:
+    text_classifier = SVC(kernel='sigmoid')
+    filename = "svcsigmoid_model.joblib"
+elif s == 6:
+    text_classifier = KNeighborsClassifier(n_neighbors=5)
+    filename = "kneighbors_model.joblib"
 
-prediction = lreg.predict_proba(xvalid_tfidf)
-prediction_int = prediction[:,1] >= 0.3
-prediction_int = prediction_int.astype(np.int)
-
-print(f1_score(yvalid, prediction_int))
-print(accuracy_score(yvalid, prediction_int))
-
-text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
 text_classifier.fit(xtrain_tfidf, ytrain)
-predictions = text_classifier.predict(xvalid_tfidf)
+
+if os.path.isfile(os.getcwd()+'/' + filename):
+    os.remove(filename) 
+dump(text_classifier, filename) 
+print("Model saved in file " + filename + '\n')
+
+if s == 1:
+    prediction = text_classifier.predict_proba(xvalid_tfidf)
+    prediction_int = prediction[:,1] >= 0.3
+    predictions = prediction_int.astype(np.int)
+else:
+    predictions = text_classifier.predict(xvalid_tfidf)
+
 print(confusion_matrix(yvalid,predictions))
 print(classification_report(yvalid,predictions))
-print(f1_score(yvalid, predictions))
-print(accuracy_score(yvalid, predictions))
+#print(f1_score(yvalid, predictions))
+#print(accuracy_score(yvalid, predictions))
+
+#test_tfidf = tfidf_vectorizer.fit_transform(test['tidy_tweet'])
+#predictions = text_classifier.predict(test_tfidf)
+#dump(text_classifier,'randomforest_sentiment_model.joblib')
+
+'''
+
+error = []
+
+# Calculating error for K values between 1 and 40
+for i in range(1, 40):
+    knn = KNeighborsClassifier(n_neighbors=i)
+    knn.fit(xtrain_tfidf, ytrain)
+    pred_i = knn.predict(xvalid_tfidf)
+    error.append(np.mean(pred_i != yvalid))
+
+
+plt.figure(figsize=(12, 6))
+plt.plot(range(1, 40), error, color='red', linestyle='dashed', marker='o',
+         markerfacecolor='blue', markersize=10)
+plt.title('Error Rate K Value')
+plt.xlabel('K Value')
+plt.ylabel('Mean Error')
+plt.show()
+'''

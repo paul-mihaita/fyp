@@ -89,7 +89,7 @@ class TwitterClient(object):
         except tweepy.TweepError as e: 
             # print error (if any) 
             print("Error : " + str(e)) 
-  
+#text_classifier = load('randomforest_sentiment_model.joblib') 
 def main(): 
     # creating object of TwitterClient Class 
     api = TwitterClient() 
@@ -116,7 +116,7 @@ def main():
     print("\n\nNegative tweets:") 
     for tweet in ntweets[:10]: 
         print(tweet['text']) 
-  
+input("lala")
 if __name__ == "__main__": 
     # calling main function 
     main() 
