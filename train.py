@@ -40,6 +40,7 @@ tfidf_vectorizer = TfidfVectorizer(max_df=0.90, min_df=2, max_features=1000, sto
 # TF-IDF feature matrix
 
 train_tfidf = tfidf_vectorizer.fit_transform(train['tidy_tweet'])
+
 train_label = train['label']
 
 # splitting data into training and validation set
@@ -68,7 +69,9 @@ text_classifier.fit(xtrain_tfidf, ytrain)
 
 if os.path.isfile(os.getcwd()+'/' + filename):
     os.remove(filename) 
-dump(text_classifier, filename) 
+dump(text_classifier, filename)
+dump(tfidf_vectorizer, open("tfidf.pkl", "wb"))
+
 print("Model saved in file " + filename + '\n')
 
 if s == 1:
