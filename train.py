@@ -12,6 +12,9 @@ from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -116,3 +119,12 @@ prediction_int = prediction[:,1] >= 0.3
 prediction_int = prediction_int.astype(np.int)
 
 print(f1_score(yvalid, prediction_int))
+print(accuracy_score(yvalid, prediction_int))
+
+text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
+text_classifier.fit(xtrain_tfidf, ytrain)
+predictions = text_classifier.predict(xvalid_tfidf)
+print(confusion_matrix(yvalid,predictions))
+print(classification_report(yvalid,predictions))
+print(f1_score(yvalid, predictions))
+print(accuracy_score(yvalid, predictions))
