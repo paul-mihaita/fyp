@@ -52,11 +52,12 @@ def plot_hashtags(l):
 def clean_tweets(toClean):
     # remove twitter handles (@user)
     toClean['tidy_tweet'] = np.vectorize(remove_pattern)(toClean['tweet'], "@[\w]*")
+    # remove links
+    toClean['tidy_tweet'] = toClean['tidy_tweet'].str.replace("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ")
     # remove special characters, numbers, punctuations
     toClean['tidy_tweet'] = toClean['tidy_tweet'].str.replace("[^a-zA-Z#]", " ")
-
     # removing short words
-    toClean['tidy_tweet'] = toClean['tidy_tweet'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>2]))
+    toClean['tidy_tweet'] = toClean['tidy_tweet'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>3]))
 
     tokenized_tweet = toClean['tidy_tweet'].apply(lambda x: x.split())
 
@@ -69,7 +70,30 @@ def clean_tweets(toClean):
 
     toClean['tidy_tweet'] = tokenized_tweet
     return toClean
-
+def loadModel():
+    s = prompt_classifier()
+    if s == 1:
+        filename = 'logisticregression_model.joblib'
+    elif s == 2:
+        filename = 'randomforest_model.joblib'
+    elif s == 3:
+        filename = "svcpolynomial_model.joblib"
+    elif s == 4:
+        filename = "svcgaussian_model.joblib"
+    elif s == 5:
+        filename = "svcsigmoid_model.joblib"
+    elif s == 6:
+        filename = "kneighbors_model.joblib"
+    return load(filename)
+def prompt_classifier():
+    s = 0
+    while s<1 or s > 6:
+        s = "Which technique to use for training?" + '\n' + "1. Logistic Regression" + '\n' + "2. Random Forest" + '\n' + "3. SVC , polynomial" + '\n' + "4. SVC, gaussian" + '\n' + "5. SVC, sigmoid" + '\n' + "6. K-nearest " + '\n' + "Please enter a number from 1 to 6" + '\n'
+        try:
+            s = int(input(s))
+        except:
+            s = 0
+    return s
 def analyse_tags(data):
     make_wordmap(data,0)
     make_wordmap(data,1)

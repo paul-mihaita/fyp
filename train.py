@@ -9,6 +9,8 @@ import nltk
 import math
 from joblib import dump, load
 from nltk.stem.porter import *
+from nltk.corpus import stopwords 
+from nltk.tokenize import word_tokenize 
 import warnings 
 from wordcloud import WordCloud
 from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
@@ -23,16 +25,14 @@ from helper_functions import *
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-s = 0
-while s<1 or s > 6:
-    s = "Which technique to use for training?" + '\n' + "1. Logistic Regression" + '\n' + "2. Random Forest" + '\n' + "3. SVC , polynomial" + '\n' + "4. SVC, gaussian" + '\n' + "5. SVC, sigmoid" + '\n' + "6. K-nearest " + '\n' + "Please enter a number from 1 to 6" + '\n'
-    try:
-        s = int(input(s))
-    except:
-        s = 0
+s = prompt_classifier()
 
 train  = clean_tweets(pd.read_csv('train_tweets.csv'))
 test = clean_tweets(pd.read_csv('test_tweets.csv'))
+new = clean_tweets(load("tweets_labeled.csv"))
+new2 = clean_tweets(load("tweets_labeled2.csv"))
+train = train.append(new)
+train = train.append(new2)
 
 #analyse_tags(train)
 
@@ -62,14 +62,16 @@ elif s == 5:
     text_classifier = SVC(kernel='sigmoid')
     filename = "svcsigmoid_model.joblib"
 elif s == 6:
-    text_classifier = KNeighborsClassifier(n_neighbors=5)
+    text_classifier = KNeighborsClassifier(n_neighbors=4)
     filename = "kneighbors_model.joblib"
 
 text_classifier.fit(xtrain_tfidf, ytrain)
 
 if os.path.isfile(os.getcwd()+'/' + filename):
-    os.remove(filename) 
+    os.remove(os.getcwd()+'/' + filename) 
 dump(text_classifier, filename)
+if os.path.isfile(os.getcwd()+'/' + "tfidf.pkl"):
+    os.remove(os.getcwd()+'/' + "tfidf.pkl") 
 dump(tfidf_vectorizer, open("tfidf.pkl", "wb"))
 
 print("Model saved in file " + filename + '\n')
@@ -110,3 +112,4 @@ plt.xlabel('K Value')
 plt.ylabel('Mean Error')
 plt.show()
 '''
+

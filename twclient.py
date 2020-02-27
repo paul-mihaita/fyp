@@ -85,7 +85,7 @@ class TwitterClient(object):
 
             #fetched_tweets['tweet'] = fetched_tweets['tweet'].tolist()
             fetched_tweets = clean_tweets(df)
-            text_classifier = load('randomforest_model.joblib')
+            text_classifier = loadModel()
             #tfidf_vectorizer = TfidfVectorizer(max_df=0.90, min_df=2, max_features=1000, stop_words='english')
             #loaded_vec = CountVectorizer(decode_error="replace",vocabulary=pickle.load(open("feature.pkl", "rb")))
             #tfidf = transformer.fit_transform(loaded_vec.fit_transform(np.array(["aaa ccc eee"])))
@@ -95,9 +95,6 @@ class TwitterClient(object):
             predictions = text_classifier.predict(test_tfidf)
             i = 0
             # parsing tweets one by one
-            print(len(predictions))
-            print(len(fetched))
-            print(len(fetched_tweets['tidy_tweet']))
             for original,tweet in zip(fetched,fetched_tweets['tidy_tweet']): 
                 # empty dictionary to store required params of a tweet 
                 parsed_tweet = {} 
@@ -130,25 +127,23 @@ def main():
     word = input("Enter keyword for search:" + '\n')
     tweets = api.get_tweets(query = word , count = 300)
 
-    # picking positive tweets from tweets 
+    # picking racist/sexist tweets from tweets 
     ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 1] 
-    # percentage of positive tweets 
-    print("Positive tweets percentage: {} %".format(100*len(ptweets)/len(tweets))) 
-    # picking negative tweets from tweets 
+    # percentage of racist/sexist tweets 
+    print("racist/sexist tweets percentage: {} %".format(100*len(ptweets)/len(tweets))) 
+    # picking non racist/sexist tweets from tweets 
     ntweets = [tweet for tweet in tweets if tweet['sentiment'] == 0] 
-    # percentage of negative tweets 
-    print("Negative tweets percentage: {} %".format(100*len(ntweets)/len(tweets))) 
-    # percentage of neutral tweets 
-    print("Neutral tweets percentage: {} %".format(100*(len(tweets) - len(ntweets) - len(ptweets))/len(tweets)))
+    # percentage of non racist/sexist tweets 
+    print("non racist/sexist tweets percentage: {} %".format(100*len(ntweets)/len(tweets))) 
   
-    # printing first 5 positive tweets 
-    print("\n\nPositive tweets:") 
-    for tweet in ptweets[:10]: 
+    # printing first 5 racist/sexist tweets 
+    print("\n\nracist/sexist tweets:") 
+    for tweet in ptweets[:5]: 
         print(tweet['text']) 
   
-    # printing first 5 negative tweets 
-    print("\n\nNegative tweets:") 
-    for tweet in ntweets[:10]: 
+    # printing first 5 non racist/sexist tweets 
+    print("\n\nnon racist/sexist tweets:") 
+    for tweet in ntweets[:5]: 
         print(tweet['text']) 
 
 if __name__ == "__main__": 
