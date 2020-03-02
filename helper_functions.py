@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import string
 import nltk
+from scipy.sparse import csr_matrix
 import math
 from joblib import dump, load
 from nltk.stem.porter import *
 import warnings 
+from nltk.stem import 	WordNetLemmatizer
 from wordcloud import WordCloud
 from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -18,7 +20,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
-
+def get_partition(data,ind):
+    arr = []
+    for x in ind:
+        arr.append(data[x])
+    return arr
 def make_wordmap(data,label):
     normal_words =' '.join([text for text in data['tidy_tweet'][data['label'] == label]])
     wordcloud = WordCloud(width=800, height=500, random_state=21,max_font_size=110).generate(normal_words)
@@ -40,6 +46,11 @@ def hashtag_extract(x):
         hashtags.append(ht)
 
     return hashtags
+def test_cleantext(s):
+    d = {}
+    d['tweet']= [s]
+    data = pd.DataFrame(d, columns = ['tweet']) 
+    print(clean_tweets(data)['tidy_tweet'])
 def plot_hashtags(l):
     a = nltk.FreqDist(l)
     d = pd.DataFrame({'Hashtag': list(a.keys()),'Count': list(a.values())})
@@ -57,12 +68,14 @@ def clean_tweets(toClean):
     # remove special characters, numbers, punctuations
     toClean['tidy_tweet'] = toClean['tidy_tweet'].str.replace("[^a-zA-Z#]", " ")
     # removing short words
-    toClean['tidy_tweet'] = toClean['tidy_tweet'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>3]))
+    #toClean['tidy_tweet'] = toClean['tidy_tweet'].apply(lambda x: ' '.join([w for w in x.split() if len(w)>3]))
 
     tokenized_tweet = toClean['tidy_tweet'].apply(lambda x: x.split())
 
     stemmer = PorterStemmer()
+    wordnet_lemmatizer = WordNetLemmatizer()
 
+    #tokenized_tweet = tokenized_tweet.apply(lambda x: [wordnet_lemmatizer.lemmatize(i) for i in x]) # lematization
     tokenized_tweet = tokenized_tweet.apply(lambda x: [stemmer.stem(i) for i in x]) # stemming
 
     for i in range(len(tokenized_tweet)):

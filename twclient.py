@@ -95,23 +95,24 @@ class TwitterClient(object):
             predictions = text_classifier.predict(test_tfidf)
             i = 0
             # parsing tweets one by one
-            for original,tweet in zip(fetched,fetched_tweets['tidy_tweet']): 
+            for tweet in fetched: 
                 # empty dictionary to store required params of a tweet 
                 parsed_tweet = {} 
   
                 # saving text of tweet 
-                parsed_tweet['text'] = original.text +'\n' +"-----------" +'\n'+ tweet + '\n'
+                parsed_tweet['text'] = tweet.text + '\n'
                 # saving sentiment of tweet 
                 #parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text) 
                 parsed_tweet['sentiment'] = predictions[i]
-                i = i + 1
                 # appending parsed tweet to tweets list 
-                if original.retweet_count > 0: 
+                if tweet.retweet_count > 0: 
                     # if tweet has retweets, ensure that it is appended only once 
                     if parsed_tweet not in tweets: 
                         tweets.append(parsed_tweet) 
+                        i = i + 1
                 else: 
                     tweets.append(parsed_tweet) 
+                    i = i + 1
             # return parsed tweets 
             return tweets 
   
